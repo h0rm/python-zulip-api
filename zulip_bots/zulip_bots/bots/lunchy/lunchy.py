@@ -13,10 +13,35 @@ class Lunchy(object):
     '''
     A docstring documenting this bot.
     '''
+    JOBSFILE = 'jobs.p'
+
+    def initialize(self, bot_handler):
+        self.load_jobs(bot_handler)
 
     def __init__(self):
         self.schedule = Scheduler()
         self.cease_continuous_run = self.run_continously()
+
+    def load_jobs(self, bot_handler):
+        if os.path.isfile(self.JOBSFILE):
+            with open('jobs.p', 'rb') as f:
+                jobs = pickle.load(f)
+                # jobs = bot_handler.storage.get('jobs')
+
+                for (t, id) in jobs:
+                    self.schedule.every().day.at(t).do(
+                        lambda: bot_handler.send_message(dict(
+                            type=id[0],  # can be 'stream' or 'private'
+                            to=id[1],  # either the stream name or user's email
+                            subject=id[2],  # message subject
+                            content=self.menu(),  # content of the sent message
+                        ))).tag(id)
+                    print("Job file loaded!")
+
+    def save_jobs(self, bot_handler):
+        l = [(j.at_time.strftime('%H:%M'), list(j.tags)[0]) for j in self.schedule.jobs]
+        # bot_handler.storage.put('jobs', l)
+        pickle.dump(l, open(self.JOBSFILE, "wb"))
 
     def run_continously(self, interval=1):
         cease_continuous_run = threading.Event()
@@ -106,6 +131,68 @@ class Lunchy(object):
 
         return text
 
+    def set_reminder(self, message, bot_handler):
+        global reminder
+        t = re.match('set reminder (.*)', message['content']).group(1)
+
+        if message['type'] == 'private':
+            id = (message['type'], message['sender_email'], message['subject'])
+        else:
+            id = (message['type'], message['display_recipient'], message['subject'])
+
+        if t == 'off':
+            self.schedule.clear(id)
+            msg = 'Reminder cleared'
+            self.save_jobs(bot_handler)
+
+        elif t and time.strptime(t, '%H:%M'):
+            self.schedule.clear(id)
+            self.schedule.every().day.at(t).do(
+                lambda: bot_handler.send_message(dict(
+                    type=id[0],  # can be 'stream' or 'private'
+                    to=id[1],  # either the stream name or user's email
+                    subject=id[2],  # message subject
+                    content=self.menu(),  # content of the sent message
+                ))).tag(id)
+            msg = 'Reminder set to {}'.format(t)
+            self.save_jobs(bot_handler)
+
+        else:
+            msg = 'Wrong format. Example "set reminder 11:50'
+
+        bot_handler.send_reply(
+            message,
+            msg,
+        )
+
+    def list_reminder(self, message, bot_handler):
+        msg = 'No reminder set'
+
+        if message['type'] == 'private':
+            id = (message['type'], message['sender_email'], message['subject'])
+        else:
+            id = (message['type'], message['display_recipient'], message['subject'])
+
+        if message['content'].endswith('all'):
+            reminder = ['{} for streams {}'.format(j.at_time.strftime('%H:%M'), list(j.tags)[0])
+                        for j in self.schedule.jobs]
+
+            if reminder:
+                msg = '\n'.join(reminder)
+
+        else:
+            reminder = ['{}'.format(j.at_time.strftime('%H:%M'))
+                        for j in self.schedule.jobs if id in j.tags]
+
+            if reminder:
+                msg = 'Reminder set to {}'.format(
+                    '\n'.join(reminder))
+
+        bot_handler.send_reply(
+            message,
+            msg,
+        )
+
     def menu(self):
         msg = "**{}'s lunch menu**\n\n".format(self.tag())
         msg += "**Teigware:**\n" + "\n".join(self.teigware()) + '\n\n'
@@ -129,7 +216,12 @@ class Lunchy(object):
                     message,
                     self.menu(),
                 ))
-
+        elif message['content'].startswith('set reminder'):
+            self.set_reminder(message, bot_handler)
+        elif message['content'].startswith('load jobs'):
+            self.load_jobs(bot_handler)
+        elif message['content'].startswith('list reminder'):
+            self.list_reminder(message, bot_handler)
         else:
             bot_handler.send_reply(
                 message,
