@@ -74,9 +74,16 @@ class Lunchy(object):
             p = last[0].find_parent("div", attrs={"class": None}).find_parent("div", attrs={"class": None})
             pars = p.find_all('p')
 
-            lines = [p.text for p in pars]
+            all = ''
+            for p in pars:
+                all += p.text
 
-            return lines
+            lines = all.split('#')
+
+            if len(lines) >= 2:
+                return lines[2:-1]
+            else:
+                return lines
 
         else:
             return []
