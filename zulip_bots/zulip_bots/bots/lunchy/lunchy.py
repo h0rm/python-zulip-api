@@ -61,6 +61,26 @@ class Lunchy(object):
         lst = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
         return lst[datetime.datetime.today().weekday()]
 
+    def salonwichtig(self):
+        print('Parsing facebook.com/salonwichtig')
+        page = requests.get('https://www.facebook.com/salonwichtig')
+
+        soup = BeautifulSoup(page.text, 'html.parser')
+        timestamp = soup.find_all("span", attrs={"class": "timestampContent"})
+
+        last = [t for t in timestamp if re.match('\d+ Std', t.text)]
+
+        if last:
+            p = last[0].find_parent("div", attrs={"class": None}).find_parent("div", attrs={"class": None})
+            pars = p.find_all('p')
+
+            lines = [p.text for p in pars]
+
+            return lines
+
+        else:
+            return []
+
     def teigware(self):
         print('Parsing teigware.at')
 
@@ -196,7 +216,8 @@ class Lunchy(object):
     def menu(self):
         msg = "**{}'s lunch menu**\n\n".format(self.tag())
         msg += "**Teigware:**\n" + "\n".join(self.teigware()) + '\n\n'
-        msg += "**Feinessen:**\n" + "\n".join(self.feinessen()) + '\n'
+        msg += "**Feinessen:**\n" + "\n".join(self.feinessen()) + '\n\n'
+        msg += "**Salon Wichtig:**\n" + "\n".join(self.salonwichtig()) + '\n'
 
         print(msg)
         return msg
