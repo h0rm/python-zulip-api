@@ -230,7 +230,14 @@ class Lunchy(object):
         return msg
 
     def usage(self):
-        return '''Testbot'''
+        return '''
+        Hi, I'm lunchy. How can I help you?
+        
+        `menu` gives you today's lunch menu right away
+        `set reminder <hours>:<min>` sets a daily reminder for the current stream
+        `list reminder` lists reminders for the current stream
+        `list reminder all` lists reminders in all streams
+        '''
 
     def handle_message(self, message, bot_handler):
         if message['content'].startswith('menu'):
