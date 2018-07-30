@@ -136,12 +136,12 @@ class Lunchy(object):
                     current = ''
 
                 elif type(c.next) == NavigableString:
-
-                    if c.string.startswith('__'):
+                    
+                    if c.string and c.string.startswith('__'):
                         list.append(current)
                         current = ''
                     else:
-                        current += c.string
+                        current += str(c.string)
 
                         if c.find_parent(name='h3'):
                             list.append(current)
