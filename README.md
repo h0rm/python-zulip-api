@@ -1,3 +1,8 @@
+# Lunchy
+
+Start lunchy with `PYTHONIOENCODING=UTF-8 python zulip_bots/zulip_bots/run.py lunchy --config-file zuliprc`. On `martin` the python environment is called `lunchy-zulip`.
+
+
 # Zulip API
 
 ![Build status](https://travis-ci.org/zulip/python-zulip-api.svg?branch=master)
