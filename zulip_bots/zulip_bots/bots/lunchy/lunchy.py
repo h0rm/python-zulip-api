@@ -35,7 +35,7 @@ class Lunchy(object):
                             to=id[1],  # either the stream name or user's email
                             subject=id[2],  # message subject
                             content=self.menu(),  # content of the sent message
-                        ))).tag(id)
+                        )) if datetime.datetime.today().weekday() < 5 else False).tag(id)
                     print("Job file loaded!")
 
     def save_jobs(self, bot_handler):
@@ -180,7 +180,7 @@ class Lunchy(object):
                     to=id[1],  # either the stream name or user's email
                     subject=id[2],  # message subject
                     content=self.menu(),  # content of the sent message
-                ))).tag(id)
+                )) if datetime.datetime.today().weekday() < 5 else False)).tag(id)
             msg = 'Reminder set to {}'.format(t)
             self.save_jobs(bot_handler)
 
