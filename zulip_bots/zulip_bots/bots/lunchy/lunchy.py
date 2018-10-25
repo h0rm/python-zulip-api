@@ -8,6 +8,29 @@ from schedule import Scheduler
 import pickle
 import threading
 
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.pdfpage import PDFPage
+from pdfminer.converter import TextConverter, HTMLConverter
+from pdfminer.layout import LAParams
+import io
+
+def pdfparser(data):
+
+    # fp = open(data, 'rb')
+    fp = io.BytesIO(data)
+    rsrcmgr = PDFResourceManager()
+    retstr = io.BytesIO()
+
+    device = HTMLConverter(rsrcmgr, retstr, codec='utf-8')
+    # Create a PDF interpreter object.
+    interpreter = PDFPageInterpreter(rsrcmgr, device)
+    # Process each page contained in the document.
+
+    for page in PDFPage.get_pages(fp):
+        interpreter.process_page(page)
+        data =  retstr.getvalue().decode('UTF-8')
+
+    return data
 
 class Lunchy(object):
     '''
@@ -60,6 +83,33 @@ class Lunchy(object):
     def tag(self):
         lst = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
         return lst[datetime.datetime.today().weekday()]
+
+    def wiatshaus(self):
+        print('Parsing wiener-wiazhaus.at')
+
+        page = requests.get('http://nataschaorlik.wixsite.com/nataschaneu2015/mittag')
+
+        soup = BeautifulSoup(page.text, 'html.parser')
+        elem = soup.find("a", string="MITTAGSMENÜS.PDF")
+
+        pdf = requests.get(elem.attrs['href'])
+        txt = pdfparser(pdf.content)
+
+        soup = BeautifulSoup(txt, 'html.parser')
+        elem = soup.find("span",string=self.tag())
+
+        start = elem.next.next.next
+        mo = re.match('.+([0-9])[^0-9]*$', start)
+        soup = start[mo.start(1)+1:]
+
+        body = start.next.next
+
+        i = re.findall('I\. (.+?)II\. ', body)[0].strip()
+        ii = re.findall('II\. (.+?)III\. ', body)[0].strip()
+        iii = re.findall('III\.(.+)', body)[0].strip()
+
+        price = re.findall('([0-9,]+)\s*€',txt)[0]
+        return [soup] + ['{} - *€{}*'.format(t, price) for t in [i, ii, iii]]
 
     def salonwichtig(self):
         print('Parsing facebook.com/salonwichtig')
@@ -224,7 +274,8 @@ class Lunchy(object):
         msg = "**{}'s lunch menu**\n\n".format(self.tag())
         msg += "**Teigware:**\n" + "\n".join(self.teigware()) + '\n\n'
         msg += "**Feinessen:**\n" + "\n".join(self.feinessen()) + '\n\n'
-        msg += "**Salon Wichtig:**\n" + "\n".join(self.salonwichtig()) + '\n'
+        msg += "**Salon Wichtig:**\n" + "\n".join(self.salonwichtig()) + '\n\n'
+        msg += "**Wiener Wiazhaus:**\n" + "\n".join(self.wiatshaus()) + '\n'
 
         print(msg)
         return msg
