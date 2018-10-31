@@ -188,7 +188,7 @@ class Lunchy(object):
 
             for c in node.find_all():
 
-                if c.name == 'br':
+                if c.name == 'p':
                     list.append(current)
                     current = ''
 
@@ -196,6 +196,7 @@ class Lunchy(object):
                     
                     if c.string and c.string.startswith('__'):
                         list.append(current)
+                        list.append('__')
                         current = ''
                     else:
                         current += str(c.string)
@@ -207,12 +208,14 @@ class Lunchy(object):
             list.append(current)
             return list
 
-        list = br_list(elem)
+        list = [l for l in br_list(elem) if l is not '']
 
         for i, e in enumerate(list):
             if re.search(self.tag(), e, flags=re.IGNORECASE) or re.search('WOCHENGERICHTE', e):
-                text.append('{} - *{}*'.format(list[i + 1], list[i + 3].replace(' ', '')))
-
+                if list[i+2] is not '__':
+                    text.append('{} - *{}*'.format(list[i + 1], list[i + 2].replace(' ', '')))
+                else:
+                    text.append(list[i+1])
         return text
 
     def set_reminder(self, message, bot_handler):
