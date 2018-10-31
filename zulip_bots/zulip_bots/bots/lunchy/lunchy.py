@@ -98,18 +98,25 @@ class Lunchy(object):
         soup = BeautifulSoup(txt, 'html.parser')
         elem = soup.find("span",string=self.tag())
 
-        start = elem.next.next.next
-        mo = re.match('.+([0-9])[^0-9]*$', start)
-        soup = start[mo.start(1)+1:]
+        if not elem: 
+            return []
 
-        body = start.next.next
+        start = elem.find_next("span",style=re.compile('.*position:absolute.*'))
+        body = start.next
 
-        i = re.findall('I\. (.+?)II\. ', body)[0].strip()
-        ii = re.findall('II\. (.+?)III\. ', body)[0].strip()
-        iii = re.findall('III\.(.+)', body)[0].strip()
-
-        price = re.findall('([0-9,]+)\s*€',txt)[0]
-        return [soup] + ['{} - *€{}*'.format(t, price) for t in [i, ii, iii]]
+        items = [
+            re.findall('I\. (.+?)II\. ', body),
+            re.findall('II\. (.+?)III\. ', body),
+            re.findall('III\.(.+)', body)
+        ]
+        
+        def clean(i):
+            if len(i) > 0:
+                return i[0].strip()
+            return None
+            
+        price = clean(re.findall('([0-9,]+)\s*€',txt)) or '..€'
+        return ['{} - *€{}*'.format(t, price) for t in [clean(i) for i in items] if t is not None]
 
     def salonwichtig(self):
         print('Parsing facebook.com/salonwichtig')
