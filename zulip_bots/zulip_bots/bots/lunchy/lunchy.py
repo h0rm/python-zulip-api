@@ -87,7 +87,7 @@ class Lunchy(object):
     def wiatshaus(self):
         print('Parsing wiener-wiazhaus.at')
 
-        page = requests.get('http://nataschaorlik.wixsite.com/nataschaneu2015/mittag')
+        page = requests.get('https://www.wiener-wiazhaus.com/mittag')
 
         soup = BeautifulSoup(page.text, 'html.parser')
         elem = soup.find("a", string="MITTAGSMENÜS.PDF")
@@ -284,7 +284,7 @@ class Lunchy(object):
         msg = "**{}'s lunch menu**\n\n".format(self.tag())
         msg += "**Teigware:**\n" + "\n".join(self.teigware()) + '\n\n'
         msg += "**Feinessen:**\n" + "\n".join(self.feinessen()) + '\n\n'
-        msg += "**Salon Wichtig:**\n" + "\n".join(self.salonwichtig()) + '\n\n'
+       # msg += "**Salon Wichtig:**\n" + "\n".join(self.salonwichtig()) + '\n\n'
         msg += "**Wiener Wiazhaus:**\n" + "\n".join(self.wiatshaus()) + '\n'
 
         print(msg)
